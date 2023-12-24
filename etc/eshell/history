@@ -1,0 +1,11 @@
+touch emacs-config.org
+ls -al
+ls -al
+ls -al
+ls -al
+ls -al
+ls -al
+cat init.el
+cd .emacs.d/
+ls -al
+rm -rf auto-save-list/
