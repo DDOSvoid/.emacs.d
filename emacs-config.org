@@ -1215,6 +1215,23 @@ Emacs默认选择文本后直接输入，是不会直接删除所选择的文本
     (magit-ediff-dwim-show-on-hunks t))
 #+end_src
 
+** diff-hl
+[[https://github.com/dgutov/diff-hl][diff-hl]] 插件可以在左侧高亮显示相对于远程仓库的修改部分。
+
+#+begin_src emacs-lisp
+  (use-package diff-hl
+    :ensure t
+    :hook ((dired-mode         . diff-hl-dired-mode-unless-remote)
+           (magit-pre-refresh  . diff-hl-magit-pre-refresh)
+           (magit-post-refresh . diff-hl-magit-post-refresh))
+    :init
+    (global-diff-hl-mode t)
+    :config
+    ;; When Emacs runs in terminal, show the indicators in margin instead.
+    (unless (display-graphic-p)
+      (diff-hl-margin-mode)))
+#+end_src
+
 ** init-dev footer
 
 #+begin_src emacs-lisp
