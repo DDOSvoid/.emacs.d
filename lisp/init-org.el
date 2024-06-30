@@ -21,8 +21,8 @@
   (org-level-8 ((t (:height 1.0 :weight bold))))
   (org-level-9 ((t (:height 1.0 :weight bold))))
   ;; 设置代码块用上下边线包裹
-  (org-block-begin-line ((t (:underline t :background unspecified))))
-  (org-block-end-line ((t (:overline t :underline nil :background unspecified))))
+  ;; (org-block-begin-line ((t (:underline t :background unspecified))))
+  ;; (org-block-end-line ((t (:overline t :underline nil :background unspecified))))
   :config
   ;; 提升latex预览的图片清晰度
   (plist-put org-format-latex-options :scale 1.8)
@@ -292,25 +292,7 @@ Optional for Org-mode file: `LINK'."
   (org-capture-templates `(("t" "Tasks" entry (file+headline "tasks.org" "Reminders")
                             "* TODO %i%?"
                             :empty-lines-after 1
-                            :prepend t)
-                           ("n" "Notes" entry (file+headline "capture.org" "Notes")
-                            "* %? %^g\n%i\n"
-                            :empty-lines-after 1)
-                           ;; For EWW
-                           ("b" "Bookmarks" entry (file+headline "capture.org" "Bookmarks")
-                            "* %:description\n\n%a%?"
-                            :empty-lines 1
-                            :immediate-finish t)
-                           ("d" "Diary")
-                           ("dt" "Today's TODO list" entry (file+olp+datetree "diary.org")
-                            "* Today's TODO list [/]\n%T\n\n** TODO %?"
-                            :empty-lines 1
-                            :jump-to-captured t)
-                           ("do" "Other stuff" entry (file+olp+datetree "diary.org")
-                            "* %?\n%T\n\n%i"
-                            :empty-lines 1
-                            :jump-to-captured t)
-                           ))
+                            :prepend t)))
   )
 
 (use-package denote
@@ -335,7 +317,7 @@ Optional for Org-mode file: `LINK'."
                    :jump-to-captured t)))
   :config
   (setq denote-directory (expand-file-name "~/org/"))
-  (setq denote-known-keywords '("emacs" "cpp" "commom" "cheatsheet"))
+  (setq denote-known-keywords '("emacs" "cpp" "linux" "commom" "cheatsheet"))
   (setq denote-infer-keywords t)
   (setq denote-sort-keywords t)
   ;; org is default, set others such as text, markdown-yaml, markdown-toml

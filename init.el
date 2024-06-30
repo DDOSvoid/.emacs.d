@@ -11,6 +11,7 @@
 (package-initialize)
 
 ;; 安装 `use-package'
+;; become built-in in Emacs 29.1
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
   (package-install 'use-package))
@@ -22,7 +23,7 @@
   (setq use-package-expand-minimally nil)
   (setq use-package-enable-imenu-support t)
   (if (daemonp)
-	  (setq use-package-always-demand t)))
+      (setq use-package-always-demand t)))
 
 (eval-when-compile
   (require 'use-package))
@@ -70,8 +71,15 @@
 (defun open-init-file()
   (interactive)
   (find-file "~/.emacs.d/emacs-config.org"))
-
 (global-set-key (kbd "<f2>") 'open-init-file)
+
+;; sudo find-file
+(defun sudo-edit-current-file ()
+  (interactive)
+  (when (buffer-file-name)
+    (let ((old-point (point)))
+      (find-file (concat "/sudo:root@localhost:" (buffer-file-name)))
+      (goto-char old-point))))
 
 (provide 'init)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

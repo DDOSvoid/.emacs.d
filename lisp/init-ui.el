@@ -8,16 +8,18 @@
   :bind ("C-c t" . ef-themes-toggle)
   :init
   ;; set two specific themes and switch between them
-  (setq ef-themes-to-toggle '(ef-summer ef-winter))
+  (setq ef-themes-to-toggle '(ef-cyprus ef-night))
+
   ;; set org headings and function syntax
-  (setq ef-themes-headings
-        '((0 . (bold 1))
-          (1 . (bold 1))
-          (2 . (rainbow bold 1))
-          (3 . (rainbow bold 1))
-          (4 . (rainbow bold 1))
-          (t . (rainbow bold 1))))
-  (setq ef-themes-region '(intense no-extend neutral))
+  ;; (setq ef-themes-headings
+  ;;       '((0 . (bold 1))
+  ;;         (1 . (bold 1))
+  ;;         (2 . (rainbow bold 1))
+  ;;         (3 . (rainbow bold 1))
+  ;;         (4 . (rainbow bold 1))
+  ;;         (t . (rainbow bold 1))))
+  ;; (setq ef-themes-region '(intense no-extend neutral))
+
   ;; Disable all other themes to avoid awkward blending:
   (mapc #'disable-theme custom-enabled-themes)
 
@@ -26,12 +28,12 @@
   ;; `ef-themes-light-themes'.
 
   ;; 如果你不喜欢随机主题，也可以直接固定选择一个主题，如下：
-  ;; (ef-themes-select 'ef-summer)
+  (ef-themes-select 'ef-cyprus)
 
   ;; 随机挑选一款主题，如果是命令行打开Emacs，则随机挑选一款黑色主题
-  (if (display-graphic-p)
-      (ef-themes-load-random)
-    (ef-themes-load-random 'dark))
+  ;;(if (display-graphic-p)
+  ;;    (ef-themes-load-random)
+  ;;  (ef-themes-load-random 'dark))
 
   :config
   ;; auto change theme, aligning with system themes.
@@ -42,12 +44,17 @@
       ('light (if (display-graphic-p) (ef-themes-load-random 'light) (ef-themes-load-random 'dark)))
       ('dark (ef-themes-load-random 'dark))))
 
-  (if (eq system-type 'darwin)
+  ;;(if (eq system-type 'darwin)
       ;; only for emacs-plus
-      (add-hook 'ns-system-appearance-change-functions #'my/apply-theme)
-    (ef-themes-select 'ef-summer)
-    )
+  ;;    (add-hook 'ns-system-appearance-change-functions #'my/apply-theme)
+  ;;  (ef-themes-select 'ef-summer)
+  ;;  )
   )
+
+(use-package eshell-git-prompt
+  :ensure t
+  :config
+  (eshell-git-prompt-use-theme 'robbyrussell))
 
 (use-package all-the-icons
   :ensure t
@@ -161,7 +168,7 @@
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
 ;; 草稿缓冲区默认文字设置
-(setq initial-scratch-message (concat ";; Happy hacking, DDOSvoid - Emacs ♥ you!\n\n"))
+(setq initial-scratch-message (concat ";; Happy coding, DDOSvoid - Emacs ♥ you!\n\n"))
 
 ;; 设置缓冲区的文字方向为从左到右
 (setq bidi-paragraph-direction 'left-to-right)
@@ -193,14 +200,15 @@
 (setq select-enable-clipboard t)        ; 拷贝时使用剪贴板
 
 ;; 鼠标滚动设置
-(setq scroll-step 2)
-(setq scroll-margin 2)
-(setq hscroll-step 2)
-(setq hscroll-margin 2)
-(setq scroll-conservatively 101)
-(setq scroll-up-aggressively 0.01)
-(setq scroll-down-aggressively 0.01)
-(setq scroll-preserve-screen-position 'always)
+
+;; (setq scroll-step 2)
+;; (setq scroll-margin 2)
+;; (setq hscroll-step 2)
+;; (setq hscroll-margin 2)
+;; (setq scroll-conservatively 101)
+;; (setq scroll-up-aggressively 0.01)
+;; (setq scroll-down-aggressively 0.01)
+;; (setq scroll-preserve-screen-position 'always)
 
 ;; 对于高的行禁止自动垂直滚动
 (setq auto-window-vscroll nil)
@@ -219,21 +227,21 @@
 (defun default-yes-sometimes (prompt)
   "automatically say y when buffer name match following string"
   (if (or
-	   (string-match "has a running process" prompt)
-	   (string-match "does not exist; create" prompt)
-	   (string-match "modified; kill anyway" prompt)
-	   (string-match "Delete buffer using" prompt)
-	   (string-match "Kill buffer of" prompt)
-	   (string-match "still connected.  Kill it?" prompt)
-	   (string-match "Shutdown the client's kernel" prompt)
-	   (string-match "kill them and exit anyway" prompt)
-	   (string-match "Revert buffer from file" prompt)
-	   (string-match "Kill Dired buffer of" prompt)
-	   (string-match "delete buffer using" prompt)
-	   (string-match "Kill all pass entry" prompt)
-	   (string-match "for all cursors" prompt)
-	   (string-match "Do you want edit the entry" prompt))
-	  t
+       (string-match "has a running process" prompt)
+       (string-match "does not exist; create" prompt)
+       (string-match "modified; kill anyway" prompt)
+       (string-match "Delete buffer using" prompt)
+       (string-match "Kill buffer of" prompt)
+       (string-match "still connected.  Kill it?" prompt)
+       (string-match "Shutdown the client's kernel" prompt)
+       (string-match "kill them and exit anyway" prompt)
+       (string-match "Revert buffer from file" prompt)
+       (string-match "Kill Dired buffer of" prompt)
+       (string-match "delete buffer using" prompt)
+       (string-match "Kill all pass entry" prompt)
+       (string-match "for all cursors" prompt)
+       (string-match "Do you want edit the entry" prompt))
+      t
     (original-y-or-n-p prompt)))
 (defalias 'yes-or-no-p 'default-yes-sometimes)
 (defalias 'y-or-n-p 'default-yes-sometimes)
@@ -288,8 +296,6 @@
   :ensure t
   :hook (after-init . doom-modeline-mode))
 
-
-
 (use-package keycast
   :ensure t
   :hook (after-init . keycast-mode)
@@ -309,7 +315,7 @@
 
   (dolist (input '(self-insert-command
                    org-self-insert-command))
-    (add-to-list 'keycast-substitute-alist `(,input "." "Typing…")))
+    (add-to-list 'keycast-substitute-alist `(,input "." "Typing...")))
 
   (dolist (event '(mouse-event-p
                    mouse-movement-p

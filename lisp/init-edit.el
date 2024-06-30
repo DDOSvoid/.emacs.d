@@ -8,6 +8,8 @@
 ;; 不使用Emacs自带的自动保存
 (setq auto-save-default nil)
 
+(pixel-scroll-precision-mode t)
+
 ;; Directly modify when selecting text
 (use-package delsel
   :ensure nil

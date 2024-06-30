@@ -63,7 +63,7 @@ folder, otherwise delete a word"
   :ensure t
   :after org
   :bind (([remap goto-line]                     . consult-goto-line)
-         ([remap isearch-forward]               . consult-line-symbol-at-point) ; my-consult-ripgrep-or-line
+         ([remap isearch-forward]               . consult-line)
 ;         ([remap switch-to-buffer]              . consult-buffer)
          ([remap switch-to-buffer-other-window] . consult-buffer-other-window)
          ([remap switch-to-buffer-other-frame]  . consult-buffer-other-frame)
@@ -115,7 +115,7 @@ folder, otherwise delete a word"
    consult-ripgrep consult-git-grep consult-grep
    consult-bookmark consult-recent-file consult-xref
    consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
-   :preview-key (kbd "M-."))
+   :preview-key "M-.")
 
   ;; Optionally configure the narrowing key.
   ;; Both < and C-+ work reasonably well.
@@ -133,79 +133,10 @@ folder, otherwise delete a word"
 
   ;; Use `consult-ripgrep' instead of `consult-line' in large buffers
   (defun consult-line-symbol-at-point ()
-    "Consult line the synbol where the point is"
+    "Consult line the symbol where the point is"
     (interactive)
     (consult-line (thing-at-point 'symbol)))
   )
-
-(use-package corfu
-  :ensure t
-  :hook (after-init . global-corfu-mode)
-  :bind
-  (:map corfu-map
-        ("SPC" . corfu-insert-separator)    ; configure space for separator insertion
-        ("M-q" . corfu-quick-complete)      ; use C-g to exit
-        ("TAB" . corfu-next)
-        ([tab] . corfu-next)
-        ("S-TAB" . corfu-previous)
-        ([backtab] . corfu-previous))
-  :config
-  ;; TAB cycle if there are only few candidates
-  (setq completion-cycle-threshold 0)
-  (setq tab-always-indent 'complete)
-
-  (defun corfu-enable-always-in-minibuffer ()
-    "Enable Corfu in the minibuffer if Vertico/Mct are not active."
-    (unless (or (bound-and-true-p mct--active)
-                (bound-and-true-p vertico--input))
-      ;; (setq-local corfu-auto nil) Enable/disable auto completion
-      (corfu-mode 1)))
-  (add-hook 'minibuffer-setup-hook #'corfu-enable-always-in-minibuffer 1)
-
-  ;; enable corfu in eshell
-  (add-hook 'eshell-mode-hook
-            (lambda ()
-              (setq-local corfu-auto nil)
-              (corfu-mode)))
-
-  ;; For Eshell
-  ;; ===========
-  ;; avoid press RET twice in Eshell
-  (defun corfu-send-shell (&rest _)
-    "Send completion candidate when inside comint/eshell."
-    (cond
-     ((and (derived-mode-p 'eshell-mode) (fboundp 'eshell-send-input))
-      (eshell-send-input))
-     ((and (derived-mode-p 'comint-mode)  (fboundp 'comint-send-input))
-      (comint-send-input))))
-
-  (advice-add #'corfu-insert :after #'corfu-send-shell)
-
-  :custom
-  (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
-  )
-
-;; yasnippet settings
-(use-package yasnippet
-  :ensure t
-  :diminish yas-minor-mode
-  :hook ((after-init . yas-reload-all)
-         ((prog-mode LaTeX-mode org-mode) . yas-minor-mode))
-  :config
-  ;; Suppress warning for yasnippet code.
-  (require 'warnings)
-  (add-to-list 'warning-suppress-types '(yasnippet backquote-change))
-
-  (setq yas-prompt-functions '(yas-x-prompt yas-dropdown-prompt))
-  (defun smarter-yas-expand-next-field ()
-    "Try to `yas-expand' then `yas-next-field' at current cursor position."
-    (interactive)
-    (let ((old-point (point))
-          (old-tick (buffer-chars-modified-tick)))
-      (yas-expand)
-      (when (and (eq old-point (point))
-                 (eq old-tick (buffer-chars-modified-tick)))
-        (ignore-errors (yas-next-field))))))
 
 (provide 'init-completion)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -4,7 +4,7 @@
 ;;; Code:
 
 ;; 设置垃圾回收参数
-(setq gc-cons-threshold most-positive-fixnum)
+(setq gc-cons-threshold (* 16 1024 1024))
 (setq gc-cons-percentage 0.6)
 
 ;; 启动早期不加载`package.el'包管理器

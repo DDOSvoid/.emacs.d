@@ -18,7 +18,7 @@
 ;;; Code:
 
 ;; 设置垃圾回收参数
-(setq gc-cons-threshold most-positive-fixnum)
+(setq gc-cons-threshold (* 16 1024 1024))
 (setq gc-cons-percentage 0.6)
 
 ;; 启动早期不加载`package.el'包管理器
@@ -65,6 +65,7 @@
 #+END_SRC
 
 ** package
+
 #+BEGIN_SRC emacs-lisp
   (require 'package)
   (setq package-archives
@@ -78,33 +79,35 @@
 [[https://github.com/jwiegley/use-package][use-package]]
 
 #+BEGIN_SRC emacs-lisp
-;; 安装 `use-package'
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
+  ;; 安装 `use-package'
+  ;; become built-in in Emacs 29.1
+  (unless (package-installed-p 'use-package)
+    (package-refresh-contents)
+    (package-install 'use-package))
 
-;; 配置 `use-package'
-(eval-and-compile
-  (setq use-package-always-ensure nil)
-  (setq use-package-always-defer nil)
-  (setq use-package-expand-minimally nil)
-  (setq use-package-enable-imenu-support t)
-  (if (daemonp)
-	  (setq use-package-always-demand t)))
+  ;; 配置 `use-package'
+  (eval-and-compile
+    (setq use-package-always-ensure nil)
+    (setq use-package-always-defer nil)
+    (setq use-package-expand-minimally nil)
+    (setq use-package-enable-imenu-support t)
+    (if (daemonp)
+        (setq use-package-always-demand t)))
 
-(eval-when-compile
-  (require 'use-package))
+  (eval-when-compile
+    (require 'use-package))
 
-;; 安装 `use-package' 的集成模块
-(use-package use-package-ensure-system-package
-  :ensure t)
-(use-package diminish
-  :ensure t)
-(use-package bind-key
-  :ensure t)
+  ;; 安装 `use-package' 的集成模块
+  (use-package use-package-ensure-system-package
+    :ensure t)
+  (use-package diminish
+    :ensure t)
+  (use-package bind-key
+    :ensure t)
 #+END_SRC
 
 ** quelpa
+
 [[https://github.com/quelpa/quelpa][quelpa]]
 
 #+BEGIN_SRC emacs-lisp
@@ -147,13 +150,24 @@
 
 ** other config
 
-#+BEGIN_SRC emacs-lisp
-;; F2 to open init file
-(defun open-init-file()
-  (interactive)
-  (find-file "~/.emacs.d/emacs-config.org"))
+Reference:
++ [[https://emacs-china.org/t/emacs/6731/4][emacs 修改文件提示没有权限 - Emacs-general - Emacs China]]
 
-(global-set-key (kbd "<f2>") 'open-init-file)
+#+BEGIN_SRC emacs-lisp
+  ;; F2 to open init file
+  (defun open-init-file()
+    (interactive)
+    (find-file "~/.emacs.d/emacs-config.org"))
+  (global-set-key (kbd "<f2>") 'open-init-file)
+
+  ;; sudo find-file
+  (defun sudo-edit-current-file ()
+    (interactive)
+    (when (buffer-file-name)
+      (let ((old-point (point)))
+        (find-file (concat "/sudo:root@localhost:" (buffer-file-name)))
+        (goto-char old-point))))
+
 #+END_SRC
 
 ** init.el footer
@@ -164,6 +178,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; init.el ends here
 #+END_SRC 
+
 * init-ui.el
 :PROPERTIES:
 :HEADER-ARGS: :tangle lisp/init-ui.el :mkdirp yes
@@ -184,56 +199,94 @@
 [[https://protesilaos.com/emacs/ef-themes][ef themes]]
 
 #+BEGIN_SRC emacs-lisp
-(use-package ef-themes
-  :ensure t
-  :bind ("C-c t" . ef-themes-toggle)
-  :init
-  ;; set two specific themes and switch between them
-  (setq ef-themes-to-toggle '(ef-summer ef-winter))
-  ;; set org headings and function syntax
-  (setq ef-themes-headings
-        '((0 . (bold 1))
-          (1 . (bold 1))
-          (2 . (rainbow bold 1))
-          (3 . (rainbow bold 1))
-          (4 . (rainbow bold 1))
-          (t . (rainbow bold 1))))
-  (setq ef-themes-region '(intense no-extend neutral))
-  ;; Disable all other themes to avoid awkward blending:
-  (mapc #'disable-theme custom-enabled-themes)
+  (use-package ef-themes
+    :ensure t
+    :bind ("C-c t" . ef-themes-toggle)
+    :init
+    ;; set two specific themes and switch between them
+    (setq ef-themes-to-toggle '(ef-cyprus ef-night))
 
-  ;; Load the theme of choice:
-  ;; The themes we provide are recorded in the `ef-themes-dark-themes',
-  ;; `ef-themes-light-themes'.
+    ;; set org headings and function syntax
+    ;; (setq ef-themes-headings
+    ;;       '((0 . (bold 1))
+    ;;         (1 . (bold 1))
+    ;;         (2 . (rainbow bold 1))
+    ;;         (3 . (rainbow bold 1))
+    ;;         (4 . (rainbow bold 1))
+    ;;         (t . (rainbow bold 1))))
+    ;; (setq ef-themes-region '(intense no-extend neutral))
 
-  ;; 如果你不喜欢随机主题，也可以直接固定选择一个主题，如下：
-  ;; (ef-themes-select 'ef-summer)
-
-  ;; 随机挑选一款主题，如果是命令行打开Emacs，则随机挑选一款黑色主题
-  (if (display-graphic-p)
-      (ef-themes-load-random)
-    (ef-themes-load-random 'dark))
-
-  :config
-  ;; auto change theme, aligning with system themes.
-  (defun my/apply-theme (appearance)
-    "Load theme, taking current system APPEARANCE into consideration."
+    ;; Disable all other themes to avoid awkward blending:
     (mapc #'disable-theme custom-enabled-themes)
-    (pcase appearance
-      ('light (if (display-graphic-p) (ef-themes-load-random 'light) (ef-themes-load-random 'dark)))
-      ('dark (ef-themes-load-random 'dark))))
 
-  (if (eq system-type 'darwin)
-      ;; only for emacs-plus
-      (add-hook 'ns-system-appearance-change-functions #'my/apply-theme)
-    (ef-themes-select 'ef-summer)
+    ;; Load the theme of choice:
+    ;; The themes we provide are recorded in the `ef-themes-dark-themes',
+    ;; `ef-themes-light-themes'.
+
+    ;; 如果你不喜欢随机主题，也可以直接固定选择一个主题，如下：
+    (ef-themes-select 'ef-cyprus)
+
+    ;; 随机挑选一款主题，如果是命令行打开Emacs，则随机挑选一款黑色主题
+    ;;(if (display-graphic-p)
+    ;;    (ef-themes-load-random)
+    ;;  (ef-themes-load-random 'dark))
+
+    :config
+    ;; auto change theme, aligning with system themes.
+    (defun my/apply-theme (appearance)
+      "Load theme, taking current system APPEARANCE into consideration."
+      (mapc #'disable-theme custom-enabled-themes)
+      (pcase appearance
+        ('light (if (display-graphic-p) (ef-themes-load-random 'light) (ef-themes-load-random 'dark)))
+        ('dark (ef-themes-load-random 'dark))))
+
+    ;;(if (eq system-type 'darwin)
+        ;; only for emacs-plus
+    ;;    (add-hook 'ns-system-appearance-change-functions #'my/apply-theme)
+    ;;  (ef-themes-select 'ef-summer)
+    ;;  )
     )
-  )
 #+END_SRC
+
+** doom-themes
+
+[[https://github.com/doomemacs/themes][doom-themes]]
+
+#+begin_src emacs-lisp :tangle no
+  (use-package doom-themes
+    :ensure t
+    :config
+    ;; Global settings (defaults)
+    (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+          doom-themes-enable-italic t) ; if nil, italics is universally disabled
+
+    ;; Load theme
+    (load-theme 'doom-1337 t)          ; doom-city-lights, doom-gruvbox and doom-1337
+
+    ;; Enable flashing mode-line on errors
+    (doom-themes-visual-bell-config)
+    ;; Enable custom neotree theme (all-the-icons must be installed!)
+    (doom-themes-neotree-config)
+    ;; Corrects (and improves) org-mode's native fontification.
+    (doom-themes-org-config))
+#+end_src
+
+** eshell-git-prompt
+
+[[https://github.com/xuchunyang/eshell-git-prompt/tree/master][eshell-git-prompt]]
+
+#+begin_src emacs-lisp
+  (use-package eshell-git-prompt
+    :ensure t
+    :config
+    (eshell-git-prompt-use-theme 'robbyrussell))
+#+end_src
 
 ** all-the-icons
 
 [[https://github.com/domtronn/all-the-icons.el][all-the-icons]]
+
+Use M-x all-the-icons-install-fonts to install the Resource Fonts.
 
 #+BEGIN_SRC emacs-lisp
 (use-package all-the-icons
@@ -242,6 +295,10 @@
 #+END_SRC
 
 ** nerd-icons
+
+[[https://github.com/rainstormstudio/nerd-icons.el][nerd-icons.el]]
+
+Use M-x nerd-icons-install-fonts to install Symbols Nerd Fonts Mono.
 
 #+BEGIN_SRC emacs-lisp
 (use-package nerd-icons
@@ -349,143 +406,146 @@ Need to download [[https://github.com/laishulu/Sarasa-Mono-SC-Nerd][Sarasa-Mono-
                                   ))
   )
 #+END_SRC
+
 ** other config
 
-#+BEGIN_SRC emacs-lisp
-;; 禁用一些GUI特性
-(setq use-dialog-box nil)               ; 鼠标操作不使用对话框
-(setq inhibit-default-init t)           ; 不加载 `default' 库
-(setq inhibit-startup-screen t)         ; 不加载启动画面
-(setq inhibit-startup-message t)        ; 不加载启动消息
-(setq inhibit-startup-buffer-menu t)    ; 不显示缓冲区列表
+#+begin_src emacs-lisp
+  ;; 禁用一些GUI特性
+  (setq use-dialog-box nil)               ; 鼠标操作不使用对话框
+  (setq inhibit-default-init t)           ; 不加载 `default' 库
+  (setq inhibit-startup-screen t)         ; 不加载启动画面
+  (setq inhibit-startup-message t)        ; 不加载启动消息
+  (setq inhibit-startup-buffer-menu t)    ; 不显示缓冲区列表
 
-;; 全屏启动
-(add-to-list 'default-frame-alist '(fullscreen . maximized))
+  ;; 全屏启动
+  (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
-;; 草稿缓冲区默认文字设置
-(setq initial-scratch-message (concat ";; Happy hacking, DDOSvoid - Emacs ♥ you!\n\n"))
+  ;; 草稿缓冲区默认文字设置
+  (setq initial-scratch-message (concat ";; Happy coding, DDOSvoid - Emacs ♥ you!\n\n"))
 
-;; 设置缓冲区的文字方向为从左到右
-(setq bidi-paragraph-direction 'left-to-right)
-;; 禁止使用双向括号算法
-;; (setq bidi-inhibit-bpa t)
+  ;; 设置缓冲区的文字方向为从左到右
+  (setq bidi-paragraph-direction 'left-to-right)
+  ;; 禁止使用双向括号算法
+  ;; (setq bidi-inhibit-bpa t)
 
-;; 设置自动折行宽度为80个字符，默认值为70
-(setq-default fill-column 80)
+  ;; 设置自动折行宽度为80个字符，默认值为70
+  (setq-default fill-column 80)
 
-;; 设置大文件阈值为100MB，默认10MB
-(setq large-file-warning-threshold 100000000)
+  ;; 设置大文件阈值为100MB，默认10MB
+  (setq large-file-warning-threshold 100000000)
 
-;; 以16进制显示字节数
-(setq display-raw-bytes-as-hex t)
-;; 有输入时禁止 `fontification' 相关的函数钩子，能让滚动更顺滑
-(setq redisplay-skip-fontification-on-input t)
+  ;; 以16进制显示字节数
+  (setq display-raw-bytes-as-hex t)
+  ;; 有输入时禁止 `fontification' 相关的函数钩子，能让滚动更顺滑
+  (setq redisplay-skip-fontification-on-input t)
 
-;; 禁止响铃
-(setq ring-bell-function 'ignore)
+  ;; 禁止响铃
+  (setq ring-bell-function 'ignore)
 
-;; 禁止闪烁光标
-(blink-cursor-mode -1)
+  ;; 禁止闪烁光标
+  (blink-cursor-mode -1)
 
-;; 在光标处而非鼠标所在位置粘贴
-(setq mouse-yank-at-point t)
+  ;; 在光标处而非鼠标所在位置粘贴
+  (setq mouse-yank-at-point t)
 
-;; 拷贝粘贴设置
-(setq select-enable-primary nil)        ; 选择文字时不拷贝
-(setq select-enable-clipboard t)        ; 拷贝时使用剪贴板
+  ;; 拷贝粘贴设置
+  (setq select-enable-primary nil)        ; 选择文字时不拷贝
+  (setq select-enable-clipboard t)        ; 拷贝时使用剪贴板
 
-;; 鼠标滚动设置
-(setq scroll-step 2)
-(setq scroll-margin 2)
-(setq hscroll-step 2)
-(setq hscroll-margin 2)
-(setq scroll-conservatively 101)
-(setq scroll-up-aggressively 0.01)
-(setq scroll-down-aggressively 0.01)
-(setq scroll-preserve-screen-position 'always)
+  ;; 鼠标滚动设置
 
-;; 对于高的行禁止自动垂直滚动
-(setq auto-window-vscroll nil)
+  ;; (setq scroll-step 2)
+  ;; (setq scroll-margin 2)
+  ;; (setq hscroll-step 2)
+  ;; (setq hscroll-margin 2)
+  ;; (setq scroll-conservatively 101)
+  ;; (setq scroll-up-aggressively 0.01)
+  ;; (setq scroll-down-aggressively 0.01)
+  ;; (setq scroll-preserve-screen-position 'always)
 
-;; 设置新分屏打开的位置的阈值
-(setq split-width-threshold (assoc-default 'width default-frame-alist))
-(setq split-height-threshold nil)
+  ;; 对于高的行禁止自动垂直滚动
+  (setq auto-window-vscroll nil)
 
-;; TAB键设置，在Emacs里不使用TAB键，所有的TAB默认为4个空格
-(setq-default indent-tabs-mode nil)
-(setq-default tab-width 4)
+  ;; 设置新分屏打开的位置的阈值
+  (setq split-width-threshold (assoc-default 'width default-frame-alist))
+  (setq split-height-threshold nil)
 
-;; yes或no提示设置，通过下面这个函数设置当缓冲区名字匹配到预设的字符串时自动回答yes
-(setq original-y-or-n-p 'y-or-n-p)
-(defalias 'original-y-or-n-p (symbol-function 'y-or-n-p))
-(defun default-yes-sometimes (prompt)
-  "automatically say y when buffer name match following string"
-  (if (or
-	   (string-match "has a running process" prompt)
-	   (string-match "does not exist; create" prompt)
-	   (string-match "modified; kill anyway" prompt)
-	   (string-match "Delete buffer using" prompt)
-	   (string-match "Kill buffer of" prompt)
-	   (string-match "still connected.  Kill it?" prompt)
-	   (string-match "Shutdown the client's kernel" prompt)
-	   (string-match "kill them and exit anyway" prompt)
-	   (string-match "Revert buffer from file" prompt)
-	   (string-match "Kill Dired buffer of" prompt)
-	   (string-match "delete buffer using" prompt)
-	   (string-match "Kill all pass entry" prompt)
-	   (string-match "for all cursors" prompt)
-	   (string-match "Do you want edit the entry" prompt))
-	  t
-    (original-y-or-n-p prompt)))
-(defalias 'yes-or-no-p 'default-yes-sometimes)
-(defalias 'y-or-n-p 'default-yes-sometimes)
+  ;; TAB键设置，在Emacs里不使用TAB键，所有的TAB默认为4个空格
+  (setq-default indent-tabs-mode nil)
+  (setq-default tab-width 4)
 
-;; 设置剪贴板历史长度300，默认为60
-(setq kill-ring-max 200)
+  ;; yes或no提示设置，通过下面这个函数设置当缓冲区名字匹配到预设的字符串时自动回答yes
+  (setq original-y-or-n-p 'y-or-n-p)
+  (defalias 'original-y-or-n-p (symbol-function 'y-or-n-p))
+  (defun default-yes-sometimes (prompt)
+    "automatically say y when buffer name match following string"
+    (if (or
+         (string-match "has a running process" prompt)
+         (string-match "does not exist; create" prompt)
+         (string-match "modified; kill anyway" prompt)
+         (string-match "Delete buffer using" prompt)
+         (string-match "Kill buffer of" prompt)
+         (string-match "still connected.  Kill it?" prompt)
+         (string-match "Shutdown the client's kernel" prompt)
+         (string-match "kill them and exit anyway" prompt)
+         (string-match "Revert buffer from file" prompt)
+         (string-match "Kill Dired buffer of" prompt)
+         (string-match "delete buffer using" prompt)
+         (string-match "Kill all pass entry" prompt)
+         (string-match "for all cursors" prompt)
+         (string-match "Do you want edit the entry" prompt))
+        t
+      (original-y-or-n-p prompt)))
+  (defalias 'yes-or-no-p 'default-yes-sometimes)
+  (defalias 'y-or-n-p 'default-yes-sometimes)
 
-;; 在剪贴板里不存储重复内容
-(setq kill-do-not-save-duplicates t)
+  ;; 设置剪贴板历史长度300，默认为60
+  (setq kill-ring-max 200)
 
-;; 设置位置记录长度为6，默认为16
-;; 可以使用 `counsel-mark-ring' or `consult-mark' (C-x j) 来访问光标位置记录
-;; 使用 C-x C-SPC 执行 `pop-global-mark' 直接跳转到上一个全局位置处
-;; 使用 C-u C-SPC 跳转到本地位置处
-(setq mark-ring-max 6)
-(setq global-mark-ring-max 6)
+  ;; 在剪贴板里不存储重复内容
+  (setq kill-do-not-save-duplicates t)
 
-;; 设置 emacs-lisp 的限制
-(setq max-lisp-eval-depth 10000)        ; 默认值为 800
-(setq max-specpdl-size 10000)           ; 默认值为 1600
+  ;; 设置位置记录长度为6，默认为16
+  ;; 可以使用 `counsel-mark-ring' or `consult-mark' (C-x j) 来访问光标位置记录
+  ;; 使用 C-x C-SPC 执行 `pop-global-mark' 直接跳转到上一个全局位置处
+  ;; 使用 C-u C-SPC 跳转到本地位置处
+  (setq mark-ring-max 6)
+  (setq global-mark-ring-max 6)
 
-;; 启用 `list-timers', `list-threads' 这两个命令
-(put 'list-timers 'disabled nil)
-(put 'list-threads 'disabled nil)
+  ;; 设置 emacs-lisp 的限制
+  (setq max-lisp-eval-depth 10000)        ; 默认值为 800
+  (setq max-specpdl-size 10000)           ; 默认值为 1600
 
-;; 在命令行里支持鼠标
-(xterm-mouse-mode 1)
+  ;; 启用 `list-timers', `list-threads' 这两个命令
+  (put 'list-timers 'disabled nil)
+  (put 'list-threads 'disabled nil)
 
-;; 退出Emacs时进行确认
-(setq confirm-kill-emacs 'y-or-n-p)
+  ;; 在命令行里支持鼠标
+  (xterm-mouse-mode 1)
 
-;; 在模式栏上显示当前光标的列号
-(column-number-mode t)
+  ;; 退出Emacs时进行确认
+  (setq confirm-kill-emacs 'y-or-n-p)
 
-;; 配置所有的编码为UTF-8，参考：
-;; https://thraxys.wordpress.com/2016/01/13/utf-8-in-emacs-everywhere-forever/
-(setq locale-coding-system 'utf-8)
-(set-terminal-coding-system 'utf-8)
-(set-keyboard-coding-system 'utf-8)
-(set-selection-coding-system 'utf-8)
-(set-default-coding-systems 'utf-8)
-(set-language-environment 'utf-8)
-(set-clipboard-coding-system 'utf-8)
-(set-file-name-coding-system 'utf-8)
-(set-buffer-file-coding-system 'utf-8)
-(prefer-coding-system 'utf-8)
-(modify-coding-system-alist 'process "*" 'utf-8)
-(when (display-graphic-p)
-  (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING)))
-#+END_SRC
+  ;; 在模式栏上显示当前光标的列号
+  (column-number-mode t)
+
+  ;; 配置所有的编码为UTF-8，参考：
+  ;; https://thraxys.wordpress.com/2016/01/13/utf-8-in-emacs-everywhere-forever/
+  (setq locale-coding-system 'utf-8)
+  (set-terminal-coding-system 'utf-8)
+  (set-keyboard-coding-system 'utf-8)
+  (set-selection-coding-system 'utf-8)
+  (set-default-coding-systems 'utf-8)
+  (set-language-environment 'utf-8)
+  (set-clipboard-coding-system 'utf-8)
+  (set-file-name-coding-system 'utf-8)
+  (set-buffer-file-coding-system 'utf-8)
+  (prefer-coding-system 'utf-8)
+  (modify-coding-system-alist 'process "*" 'utf-8)
+  (when (display-graphic-p)
+    (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING)))
+#+end_src
+
 ** mode line config
 *** doom-modeline
 
@@ -497,15 +557,17 @@ Need to download [[https://github.com/laishulu/Sarasa-Mono-SC-Nerd][Sarasa-Mono-
   :hook (after-init . doom-modeline-mode))
 #+END_SRC
 
-*** minions
+*** minions [deprecated]
 
 [[https://github.com/tarsius/minions][minions]]
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
 
 #+END_SRC 
 
 *** keycast
+
+[[https://github.com/tarsius/keycast][keycast]]
 
 #+BEGIN_SRC emacs-lisp
 (use-package keycast
@@ -527,7 +589,7 @@ Need to download [[https://github.com/laishulu/Sarasa-Mono-SC-Nerd][Sarasa-Mono-
 
   (dolist (input '(self-insert-command
                    org-self-insert-command))
-    (add-to-list 'keycast-substitute-alist `(,input "." "Typing…")))
+    (add-to-list 'keycast-substitute-alist `(,input "." "Typing...")))
 
   (dolist (event '(mouse-event-p
                    mouse-movement-p
@@ -554,6 +616,7 @@ Need to download [[https://github.com/laishulu/Sarasa-Mono-SC-Nerd][Sarasa-Mono-
 :PROPERTIES:
 :HEADER-ARGS: :tangle lisp/init-base.el :mkdirp yes
 :END:
+
 ** init-base header
 
 #+BEGIN_SRC emacs-lisp
@@ -568,10 +631,10 @@ Need to download [[https://github.com/laishulu/Sarasa-Mono-SC-Nerd][Sarasa-Mono-
 
 [[https://github.com/emacscollective/no-littering][no-littering]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package no-littering
   :ensure t)
-#+END_SRC
+#+end_src
 
 ** savehist
 
@@ -639,39 +702,55 @@ Need to download [[https://github.com/laishulu/Sarasa-Mono-SC-Nerd][Sarasa-Mono-
                      "COMMIT_EDITMSG\\'")))
 #+END_SRC
 
-** undo-tree
+** undo-tree [deprecated]
 
 [[https://www.dr-qubit.org/undo-tree.html][undo-tree]]
 
-#+BEGIN_SRC emacs-lisp
-(use-package undo-tree
-  :ensure t
-  :hook (after-init . global-undo-tree-mode)
-  :config
-  ;; don't save undo history to local files
-  (setq undo-tree-auto-save-history nil)
-  )
-#+END_SRC
+#+begin_src emacs-lisp :tangle no
+  (use-package undo-tree
+    :ensure t
+    :hook (after-init . global-undo-tree-mode)
+    :config
+    ;; don't save undo history to local files
+    (setq undo-tree-auto-save-history nil))
+#+end_src
 
 ** crux
 
 [[https://github.com/bbatsov/crux][crux]]
 
-#+BEGIN_SRC emacs-lisp
-(use-package crux
-  :ensure t
-  :bind (("C-a" . crux-move-beginning-of-line)
-         ("C-x 4 t" . crux-transpose-windows)
-         ("C-x K" . crux-kill-other-buffers)
-         ("C-k" . crux-smart-kill-line)
-         ("C-c r" . crux-rename-file-and-buffer)
-         ("C-x DEL" . crux-kill-line-backwards))
-  :config
-  (crux-with-region-or-buffer indent-region)
-  (crux-with-region-or-buffer untabify)
-  (crux-with-region-or-point-to-eol kill-ring-save)
-  (defalias 'rename-file-and-buffer #'crux-rename-file-and-buffer))
-#+END_SRC
+#+begin_src emacs-lisp
+  (use-package crux
+    :ensure t
+    :bind (("C-a" . crux-move-beginning-of-line)
+           ("C-k" . crux-smart-kill-line)
+           ("C-c r" . crux-rename-file-and-buffer)
+           ("C-x DEL" . crux-kill-line-backwards))
+    :config
+    (crux-with-region-or-buffer indent-region)
+    (crux-with-region-or-point-to-eol kill-ring-save)
+    (defalias 'rename-file-and-buffer #'crux-rename-file-and-buffer))
+#+end_src
+
+** rime
+Common usage:
++ ~rime-deploy~: Deploy Rime.
++ ~rime-select-schema~: Select Rime schema.
++ ~rime-open-schema~: Open Rime SCHEMA file.
++ ~rime-open-configuration~: Open Rime Configuration file.
+  
+Reference:
++ [[https://github.com/DogLooksGood/emacs-rime][DogLooksGood/emacs-rime: RIME ㄓ in Emacs]]
++ [[https://emacs-china.org/t/rime-emacs/23369][rime/鼠须管里已经设成简体，但emacs里打字还是繁体 - Emacs-general - Emacs China]]
++ [[https://manateelazycat.github.io/2020/03/22/emacs-rime/][折腾 emacs-rime]]
+
+#+begin_src emacs-lisp
+  (use-package rime
+    :ensure t
+    :custom
+    (default-input-method "rime")
+    (rime-show-candidate 'posframe))
+#+end_src
 
 ** init-base footer
 
@@ -681,6 +760,7 @@ Need to download [[https://github.com/laishulu/Sarasa-Mono-SC-Nerd][Sarasa-Mono-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; init-base.el ends here
 #+END_SRC
+
 * init-edit.el
 :PROPERTIES:
 :HEADER-ARGS: :tangle lisp/init-edit.el :mkdirp yes
@@ -695,6 +775,7 @@ Need to download [[https://github.com/laishulu/Sarasa-Mono-SC-Nerd][Sarasa-Mono-
 ;;; Code:
 
 #+END_SRC
+
 ** backup config
 
 #+BEGIN_SRC emacs-lisp
@@ -703,21 +784,29 @@ Need to download [[https://github.com/laishulu/Sarasa-Mono-SC-Nerd][Sarasa-Mono-
 ;; 不使用Emacs自带的自动保存
 (setq auto-save-default nil)
 #+END_SRC
+
+** pixel-scroll-precision-mode
+
+#+begin_src emacs-lisp
+  (pixel-scroll-precision-mode t)
+#+end_src
+
 ** delsel
 
 Emacs默认选择文本后直接输入，是不会直接删除所选择的文本进行替换的。通过内置的 =delsel= 插件来实现这个行为。
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 ;; Directly modify when selecting text
 (use-package delsel
   :ensure nil
   :hook (after-init . delete-selection-mode))
-#+END_SRC 
+#+end_src 
+
 ** autorevert
 
 当我们的文件发生了改变后，我们希望Emacs里打开的永远是最新的文件，这个时候，我们需要对自动重载进行设置，让我们的Emacs在文件发生改变的时候自动重载文件。
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package autorevert
   :ensure nil
   :hook (after-init . global-auto-revert-mode)
@@ -729,9 +818,9 @@ Emacs默认选择文本后直接输入，是不会直接删除所选择的文本
   (auto-revert-remote-files t)
   (auto-revert-check-vc-info t)
   (global-auto-revert-non-file-buffers t))
-#+END_SRC
+#+end_src
 
-** avy
+** avy [deprecated]
 ** init-edit.el footer
 
 #+BEGIN_SRC emacs-lisp
@@ -753,6 +842,7 @@ Emacs默认选择文本后直接输入，是不会直接删除所选择的文本
 ;;; Code:
 
 #+END_SRC
+
 ** org-mode config
 
 #+BEGIN_SRC emacs-lisp
@@ -774,8 +864,8 @@ Emacs默认选择文本后直接输入，是不会直接删除所选择的文本
     (org-level-8 ((t (:height 1.0 :weight bold))))
     (org-level-9 ((t (:height 1.0 :weight bold))))
     ;; 设置代码块用上下边线包裹
-    (org-block-begin-line ((t (:underline t :background unspecified))))
-    (org-block-end-line ((t (:overline t :underline nil :background unspecified))))
+    ;; (org-block-begin-line ((t (:underline t :background unspecified))))
+    ;; (org-block-end-line ((t (:overline t :underline nil :background unspecified))))
     :config
     ;; 提升latex预览的图片清晰度
     (plist-put org-format-latex-options :scale 1.8)
@@ -988,6 +1078,7 @@ Emacs默认选择文本后直接输入，是不会直接删除所选择的文本
     (org-archive-location "%s_archive::datetree/")
     )
 #+END_SRC 
+
 ** org-modern
 
 [[https://github.com/minad/org-modern][org-modern]]
@@ -1027,6 +1118,7 @@ Emacs默认选择文本后直接输入，是不会直接删除所选择的文本
   (setq org-modern-keyword nil)
   )
 #+END_SRC 
+
 ** org-appear
 
 [[https://github.com/awth13/org-appear][org-appear]]
@@ -1046,6 +1138,8 @@ Emacs默认选择文本后直接输入，是不会直接删除所选择的文本
 
 ** org-capture
 
+See this blog for more information about org-capture. [[https://www.zmonster.me/2018/02/28/org-mode-capture.html#org1a3d856][强大的 Org mode(4): 使用 capture 功能快速记录]]
+
 #+BEGIN_SRC emacs-lisp
 (use-package org-capture
   :ensure nil
@@ -1059,25 +1153,7 @@ Emacs默认选择文本后直接输入，是不会直接删除所选择的文本
   (org-capture-templates `(("t" "Tasks" entry (file+headline "tasks.org" "Reminders")
                             "* TODO %i%?"
                             :empty-lines-after 1
-                            :prepend t)
-                           ("n" "Notes" entry (file+headline "capture.org" "Notes")
-                            "* %? %^g\n%i\n"
-                            :empty-lines-after 1)
-                           ;; For EWW
-                           ("b" "Bookmarks" entry (file+headline "capture.org" "Bookmarks")
-                            "* %:description\n\n%a%?"
-                            :empty-lines 1
-                            :immediate-finish t)
-                           ("d" "Diary")
-                           ("dt" "Today's TODO list" entry (file+olp+datetree "diary.org")
-                            "* Today's TODO list [/]\n%T\n\n** TODO %?"
-                            :empty-lines 1
-                            :jump-to-captured t)
-                           ("do" "Other stuff" entry (file+olp+datetree "diary.org")
-                            "* %?\n%T\n\n%i"
-                            :empty-lines 1
-                            :jump-to-captured t)
-                           ))
+                            :prepend t)))
   )
 #+END_SRC
 
@@ -1108,7 +1184,7 @@ Emacs默认选择文本后直接输入，是不会直接删除所选择的文本
                      :jump-to-captured t)))
     :config
     (setq denote-directory (expand-file-name "~/org/"))
-    (setq denote-known-keywords '("emacs" "cpp" "commom" "cheatsheet"))
+    (setq denote-known-keywords '("emacs" "cpp" "linux" "commom" "cheatsheet"))
     (setq denote-infer-keywords t)
     (setq denote-sort-keywords t)
     ;; org is default, set others such as text, markdown-yaml, markdown-toml
@@ -1179,6 +1255,15 @@ Emacs默认选择文本后直接输入，是不会直接删除所选择的文本
     )
 #+end_src
 
+** auctex [deprecated]
+
+[[https://www.gnu.org/software/auctex/][AUCTeX - Sophisticated document creation]]
+
+#+begin_src elisp :tangle no
+  (use-package auctex
+    :ensure t)
+#+end_src
+
 ** init-org.el footer
    
 #+BEGIN_SRC emacs-lisp
@@ -1213,6 +1298,304 @@ Emacs默认选择文本后直接输入，是不会直接删除所选择的文本
     :custom
     (magit-diff-refine-hunk t)
     (magit-ediff-dwim-show-on-hunks t))
+#+end_src
+
+** projectile
+[[https://docs.projectile.mx/projectile/index.html][projectile]]
+
+#+begin_src emacs-lisp
+  (use-package projectile
+    :ensure t
+    :init
+    (projectile-mode +1)
+    :bind (:map projectile-mode-map
+                ("C-c p" . projectile-command-map))
+    :config
+    (setq projectile-track-known-projects-automatically nil))
+#+end_src
+
+** lsp-mode [deprecated]
+
+[[https://emacs-lsp.github.io/lsp-mode/][lsp-mode]]
+
+#+begin_src emacs-lisp :tangle no
+  (use-package lsp-mode
+    :ensure t
+    :init
+    ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+    (setq lsp-keymap-prefix "C-c l")
+    :hook ((c++-mode . lsp))
+    :commands lsp)
+
+
+#+end_src
+
+** eglot
+
+[[https://github.com/joaotavora/eglot][eglot]]
+
+#+begin_src emacs-lisp
+  (use-package eglot
+    :ensure nil
+    :hook (c++-mode . eglot-ensure))
+  
+#+end_src
+
+** company-mode
+
+#+begin_src emacs-lisp
+  (use-package company
+    :ensure t
+    :hook (c++-mode . company-mode)
+    :init
+    (setq company-tooltip-align-annotations t)
+    (setq company-idle-delay 0.0)
+    (setq company-show-numbers t) ; 给选项编号 (按快捷键 M-1、M-2 等等来进行选择).
+    (setq company-minimum-prefix-length 1)) ; 只需敲 1 个字母就开始进行自动补全
+#+end_src
+** racket-mode
+
+#+begin_src emacs-lisp
+  (use-package racket-mode
+    :ensure t)
+#+end_src
+
+** cc-mode
+
+#+begin_src emacs-lisp 
+  (use-package cc-mode
+    :ensure nil
+    :mode (("\\.cpp\\'" . c++-mode)
+           ("\\.h\\'" . c++-mode))
+    :custom
+    (c-basic-offset 2)
+    (c-offsets-alist '(;; a multi-line C style block comment
+                       ;;
+                       ;; /**
+                       ;;  * text
+                       ;;  */
+                       ;; int foo();
+                       (c                     . c-lineup-C-comments)
+                       ;; a multi-line string
+                       ;;
+                       ;; const char* s = "hello,\
+                       ;; world";
+                       (string                . c-lineup-dont-change)
+                       ;; brace of function
+                       ;;
+                       ;; int add1(int x) {
+                       ;;   return ++x;
+                       ;; }
+                       (defun-open            . 0)
+                       (defun-close           . 0)
+                       (defun-block-intro     . +)
+                       ;; brace of class
+                       ;;
+                       ;; class Foo {
+                       ;;  public:                                 // <- access-label
+                       ;; };
+                       (class-open            . 0)
+                       (class-close           . 0)
+                       (access-label          . /)
+                       ;; brace of class method
+                       ;;
+                       ;; class Foo {
+                       ;;   friend class Bar;                   // <- friend
+                       ;;   int getVar() {                      // <- inclass
+                       ;;       return 42;
+                       ;;   }
+                       ;; };
+                       (inline-open           . 0)
+                       (inline-close          . 0)
+                       (inclass               . +)
+                       (friend                . 0)
+                       ;; `noexcept' specifier indentation
+                       (func-decl-cont        . +)
+                       ;; brace of list
+                       ;;
+                       ;; int nums[] =
+                       ;; {
+                       ;;   0,
+                       ;;   1,
+                       ;;   {2},
+                       ;; };
+                       (brace-list-open       . 0)
+                       (brace-list-close      . 0)
+                       (brace-list-intro      . +)
+                       (brace-list-entry      . 0)
+                       (brace-entry-open      . 0)
+                       ;; brace of namespace
+                       ;;
+                       ;; namespace ns {
+                       ;; const int var = 42;
+                       ;; }
+                       (namespace-open        . 0)
+                       (namespace-close       . 0)
+                       (innamespace           . 0)
+                       ;; brace of statement block
+                       ;;
+                       ;; int send_mail() {
+                       ;;   std::mutex io_mtx;
+                       ;;   {
+                       ;;       std::lock_guard<std::mutex> lk(io_mtx);
+                       ;;       // ...
+                       ;;   }
+                       ;; }
+                       (block-open            . 0)
+                       (block-close           . 0)
+                       ;; topmost definition
+                       ;;
+                       ;; struct
+                       ;; foo {};
+                       (topmost-intro         . 0)
+                       (topmost-intro-cont    . c-lineup-topmost-intro-cont)
+                       ;; class member initialization list
+                       ;;
+                       ;; struct foo {
+                       ;;   foo(int a, int b) :
+                       ;;       a_(a),
+                       ;;       b_(b) {}
+                       ;; };
+                       (member-init-intro     . +)
+                       (member-init-cont      . c-lineup-multi-inher)
+                       ;; class inheritance
+                       ;;
+                       ;; struct Derived : public Base1,
+                       ;;                  public Base2 {
+                       ;; };
+                       (inher-intro           . +)
+                       (inher-cont            . c-lineup-multi-inher)
+                       ;; A C statement
+                       ;;
+                       ;; int main(int argc, char* argv[]) {
+                       ;;   const int var1 = 42;
+                       ;;   const int var2 = (argc > 1) ? 314   // <- a new statement starts
+                       ;;                               : 512;  // <- statement-cont
+                       ;;   {
+                       ;;       const int var3 = 42;            // <- statement-block-intro
+                       ;;   }
+                       ;;
+                       ;;   switch (argc) {
+                       ;;     case 0:                           // <- case-label
+                       ;;       break;                          // <- statement-case-intro
+                       ;;
+                       ;;     case 1:
+                       ;;       {                               // <- statement-case-open
+                       ;;           const int tmp = 101;
+                       ;;       }
+                       ;;       break;
+                       ;;   }
+                       ;;
+                       ;;   if (argc == 1)
+                       ;;       assert(argc == 1);              // <- substatement
+                       ;;
+                       ;;   if (argc == 1)
+                       ;;   {                                   // <- substatement-open
+                       ;;       assert(argc == 1);
+                       ;;   }
+                       ;;
+                       ;;   // comments                         // <- comment-intro
+                       ;;   if (argc == 1)
+                       ;;   glabel:                             // <- substatement-label
+                       ;;       assert(argc == 1);
+                       ;;
+                       ;; error:                                  // <- label, with zero `c-label-minimum-indentation'
+                       ;;   return -1;
+                       ;; }
+                       (statement             . 0)
+                       (statement-cont        . (c-lineup-ternary-bodies +))
+                       (statement-block-intro . +)
+                       (statement-case-intro  . +)
+                       (statement-case-open   . +)
+                       (substatement          . +)
+                       (substatement-open     . 0)
+                       (substatement-label    . 0)
+                       (case-label            . +)
+                       (label                 . 0)
+                       (do-while-closure      . 0)
+                       (else-clause           . 0)
+                       (catch-clause          . 0)
+                       (comment-intro         . c-lineup-comment)
+                       ;; funcall with arglist
+                       ;;
+                       ;; sum(
+                       ;;   1, 2, 3
+                       ;; );
+                       (arglist-intro         . +)
+                       (arglist-cont          . 0)
+                       (arglist-cont-nonempty . c-lineup-arglist)
+                       (arglist-close         . c-lineup-close-paren)
+                       ;; operator>> and operator<< for cin/cout
+                       ;;
+                       ;; std::cin >> a
+                       ;;          >> b;
+                       ;; std::cout << a
+                       ;;           << b;
+                       (stream-op             . c-lineup-streamop)
+                       ;; macros
+                       ;;
+                       ;; #define ALIST(G)                                \
+                       ;;   G(1)                                        \
+                       ;;   G(2)
+                       (cpp-macro             . -1000)
+                       (cpp-macro-cont        . +)
+                       ;; extern
+                       ;;
+                       ;; extern "C" {
+                       ;; void test();
+                       ;; }
+                       (extern-lang-open      . 0)
+                       (extern-lang-close     . 0)
+                       (inextern-lang         . 0)
+                       ;; lambda
+                       ;;
+                       ;; auto f = [](int a, int b) {
+                       ;;   return a + b;
+                       ;; };
+                       (inlambda              . 0)
+                       (lambda-intro-cont     . +)
+                       ;; GNU extension, a compound statement as expression
+                       ;;
+                       ;; int x = 1, y = 2;
+                       ;; int z = ({
+                       ;;   int ret;
+                       ;;   if (y > 0)
+                       ;;       ret = y;
+                       ;;   else
+                       ;;       ret = x - y;
+                       ;;   ret;
+                       ;; });
+                       (inexpr-statement      . 0)
+                       ;; c++ template args
+                       ;;
+                       ;; dummy<int,
+                       ;;       char,
+                       ;;       double>(0, 0, 0);
+                       (template-args-cont    . (c-lineup-template-args +)))))
+#+end_src
+
+** json-mode
+
+[[https://github.com/json-emacs/json-mode][json-mode]]
+
+#+begin_src emacs-lisp
+  (use-package json-mode
+    :ensure t)
+#+end_src
+
+** json-navigator
+
+[[https://github.com/DamienCassou/json-navigator][json-navigator]]
+
+#+begin_src emacs-lisp
+  (use-package json-navigator
+    :ensure t)
+#+end_src
+
+** other config
+
+#+begin_src emacs-lisp
+  (add-hook 'prog-mode-hook 'display-line-numbers-mode)
 #+end_src
 
 ** init-dev footer
@@ -1317,91 +1700,91 @@ Emacs默认选择文本后直接输入，是不会直接删除所选择的文本
 [[https://github.com/minad/consult][consult]]
 
 #+BEGIN_SRC emacs-lisp
-(use-package consult
-  :ensure t
-  :after org
-  :bind (([remap goto-line]                     . consult-goto-line)
-         ([remap isearch-forward]               . consult-line-symbol-at-point) ; my-consult-ripgrep-or-line
-;         ([remap switch-to-buffer]              . consult-buffer)
-         ([remap switch-to-buffer-other-window] . consult-buffer-other-window)
-         ([remap switch-to-buffer-other-frame]  . consult-buffer-other-frame)
-         ([remap yank-pop]                      . consult-yank-pop)
-         ([remap apropos]                       . consult-apropos)
-         ([remap bookmark-jump]                 . consult-bookmark)
-         ([remap goto-line]                     . consult-goto-line)
-         ([remap imenu]                         . consult-imenu)
-         ([remap multi-occur]                   . consult-multi-occur)
-         ([remap recentf-open-files]            . consult-recent-file)
-         ("C-x j"                               . consult-mark)
-         ("C-c g"                               . consult-ripgrep)
-         ("C-c f"                               . consult-find)
-         ("\e\ef"                               . consult-locate) ; need to enable locate first
-         ("C-c n h"                             . my/consult-find-org-headings)
-         :map org-mode-map
-         ("C-c C-j"                             . consult-org-heading)
-         :map minibuffer-local-map
-         ("C-r"                                 . consult-history)
-         :map isearch-mode-map
-         ("C-;"                                 . consult-line)
-         :map prog-mode-map
-         ("C-c C-j"                             . consult-outline)
-         )
-  :hook (completion-list-mode . consult-preview-at-point-mode)
-  :init
-  ;; Optionally configure the register formatting. This improves the register
-  ;; preview for `consult-register', `consult-register-load',
-  ;; `consult-register-store' and the Emacs built-ins.
-  (setq register-preview-delay 0
-        register-preview-function #'consult-register-format)
+  (use-package consult
+    :ensure t
+    :after org
+    :bind (([remap goto-line]                     . consult-goto-line)
+           ([remap isearch-forward]               . consult-line)
+  ;         ([remap switch-to-buffer]              . consult-buffer)
+           ([remap switch-to-buffer-other-window] . consult-buffer-other-window)
+           ([remap switch-to-buffer-other-frame]  . consult-buffer-other-frame)
+           ([remap yank-pop]                      . consult-yank-pop)
+           ([remap apropos]                       . consult-apropos)
+           ([remap bookmark-jump]                 . consult-bookmark)
+           ([remap goto-line]                     . consult-goto-line)
+           ([remap imenu]                         . consult-imenu)
+           ([remap multi-occur]                   . consult-multi-occur)
+           ([remap recentf-open-files]            . consult-recent-file)
+           ("C-x j"                               . consult-mark)
+           ("C-c g"                               . consult-ripgrep)
+           ("C-c f"                               . consult-find)
+           ("\e\ef"                               . consult-locate) ; need to enable locate first
+           ("C-c n h"                             . my/consult-find-org-headings)
+           :map org-mode-map
+           ("C-c C-j"                             . consult-org-heading)
+           :map minibuffer-local-map
+           ("C-r"                                 . consult-history)
+           :map isearch-mode-map
+           ("C-;"                                 . consult-line)
+           :map prog-mode-map
+           ("C-c C-j"                             . consult-outline)
+           )
+    :hook (completion-list-mode . consult-preview-at-point-mode)
+    :init
+    ;; Optionally configure the register formatting. This improves the register
+    ;; preview for `consult-register', `consult-register-load',
+    ;; `consult-register-store' and the Emacs built-ins.
+    (setq register-preview-delay 0
+          register-preview-function #'consult-register-format)
 
-  ;; Optionally tweak the register preview window.
-  ;; This adds thin lines, sorting and hides the mode line of the window.
-  (advice-add #'register-preview :override #'consult-register-window)
+    ;; Optionally tweak the register preview window.
+    ;; This adds thin lines, sorting and hides the mode line of the window.
+    (advice-add #'register-preview :override #'consult-register-window)
 
-  ;; Use Consult to select xref locations with preview
-  (setq xref-show-xrefs-function #'consult-xref
-        xref-show-definitions-function #'consult-xref)
+    ;; Use Consult to select xref locations with preview
+    (setq xref-show-xrefs-function #'consult-xref
+          xref-show-definitions-function #'consult-xref)
 
-  ;; MacOS locate doesn't support `--ignore-case --existing' args.
-  (setq consult-locate-args (pcase system-type
-                              ('gnu/linux "locate --ignore-case --existing --regex")
-                              ('darwin "mdfind -name")))
-  :config
-  (consult-customize
-   consult-theme
-   :preview-key '(:debounce 0.2 any)
-   consult-ripgrep consult-git-grep consult-grep
-   consult-bookmark consult-recent-file consult-xref
-   consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
-   :preview-key (kbd "M-."))
+    ;; MacOS locate doesn't support `--ignore-case --existing' args.
+    (setq consult-locate-args (pcase system-type
+                                ('gnu/linux "locate --ignore-case --existing --regex")
+                                ('darwin "mdfind -name")))
+    :config
+    (consult-customize
+     consult-theme
+     :preview-key '(:debounce 0.2 any)
+     consult-ripgrep consult-git-grep consult-grep
+     consult-bookmark consult-recent-file consult-xref
+     consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
+     :preview-key "M-.")
 
-  ;; Optionally configure the narrowing key.
-  ;; Both < and C-+ work reasonably well.
-  (setq consult-narrow-key "<") ;; (kbd "C-+")
+    ;; Optionally configure the narrowing key.
+    ;; Both < and C-+ work reasonably well.
+    (setq consult-narrow-key "<") ;; (kbd "C-+")
 
-  (autoload 'projectile-project-root "projectile")
-  (setq consult-project-root-function #'projectile-project-root)
+    (autoload 'projectile-project-root "projectile")
+    (setq consult-project-root-function #'projectile-project-root)
 
-  ;; search all org file headings under a directory, see:
-  ;; https://emacs-china.org/t/org-files-heading-entry/20830/4
-  (defun my/consult-find-org-headings (&optional match)
-    "find headngs in all org files."
-    (interactive)
-    (consult-org-heading match (directory-files org-directory t "^[0-9]\\{8\\}.+\\.org$")))
+    ;; search all org file headings under a directory, see:
+    ;; https://emacs-china.org/t/org-files-heading-entry/20830/4
+    (defun my/consult-find-org-headings (&optional match)
+      "find headngs in all org files."
+      (interactive)
+      (consult-org-heading match (directory-files org-directory t "^[0-9]\\{8\\}.+\\.org$")))
 
-  ;; Use `consult-ripgrep' instead of `consult-line' in large buffers
-  (defun consult-line-symbol-at-point ()
-    "Consult line the synbol where the point is"
-    (interactive)
-    (consult-line (thing-at-point 'symbol)))
-  )
+    ;; Use `consult-ripgrep' instead of `consult-line' in large buffers
+    (defun consult-line-symbol-at-point ()
+      "Consult line the symbol where the point is"
+      (interactive)
+      (consult-line (thing-at-point 'symbol)))
+    )
 #+END_SRC
 
-** corfu
+** corfu [deprecated]
 
 [[https://github.com/minad/corfu][corfu]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (use-package corfu
   :ensure t
   :hook (after-init . global-corfu-mode)
@@ -1448,13 +1831,13 @@ Emacs默认选择文本后直接输入，是不会直接删除所选择的文本
   :custom
   (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
   )
-#+END_SRC
+#+end_src
 
-** yasnippet
+** yasnippet [deprecated]
 
 [[https://github.com/joaotavora/yasnippet][yasnippet]] 
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle no
 ;; yasnippet settings
 (use-package yasnippet
   :ensure t
@@ -1476,7 +1859,7 @@ Emacs默认选择文本后直接输入，是不会直接删除所选择的文本
       (when (and (eq old-point (point))
                  (eq old-tick (buffer-chars-modified-tick)))
         (ignore-errors (yas-next-field))))))
-#+END_SRC
+#+end_src
 
 ** init-completion.el footer
 #+BEGIN_SRC emacs-lisp
