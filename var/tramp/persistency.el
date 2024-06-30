@@ -1,0 +1,41 @@
+;; -*- emacs-lisp -*- <24/06/29 22:12:48 /home/ddosvoid/.emacs.d/var/tramp/persistency.el>
+;; Tramp connection history.  Don't change this file.
+;; Run `M-x tramp-cleanup-all-connections' instead.
+
+(((tramp-file-name "cache" nil nil nil nil nil nil)
+  ("tramp-version" "2.6.0.29.1"))
+ ((tramp-file-name "sudo" "root" nil "localhost" nil nil nil)
+  ("null-device" "/dev/null")
+  ("uname" "Linux 5.15.153.1-microsoft-standard-WSL2")
+  ("locale" "LC_ALL=C.utf8")
+  ("test" "test")
+  ("remote-path"
+   ("/bin" "/usr/bin" "/sbin" "/usr/sbin" "/usr/local/bin" "/usr/local/sbin"))
+  ("pipe-buf" 4096)
+  ("remote-shell" "/bin/sh")
+  ("readlink" "\\readlink")
+  ("stat" "env QUOTING_STYLE=locale \\stat")
+  ("id" "/bin/id")
+  ("uid-integer" 0)
+  ("uid-string" "root")
+  ("gid-integer" 0)
+  ("gid-string" "root")
+  ("groups-integer"
+   (0))
+  ("groups-string"
+   ("root"))
+  ("file-exists" "test -e")
+  ("case-insensitive" nil)
+  ("~" "/root")
+  ("perl-file-spec" t)
+  ("perl-cwd-realpath" t)
+  ("perl" "\\perl")
+  ("bzr" nil)
+  ("git" "\\git")
+  ("hg" nil)
+  ("ln" "\\ln")
+  ("inotifywait" nil)
+  ("gio-monitor" "/bin/gio")
+  ("~root" "/root"))
+ ((tramp-file-name "sudo" "ddosvoid" nil "LAPTOP-K4FS8L9P" nil nil nil)
+  nil))
