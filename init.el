@@ -84,3 +84,16 @@
 (provide 'init)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; init.el ends here
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   '(avy yasnippet vertico use-package-ensure-system-package undo-tree rime racket-mode quelpa-use-package projectile pinyinlib org-modern org-appear orderless no-littering minions marginalia magit lsp-mode keycast json-navigator json-mode fontaine eshell-git-prompt ef-themes doom-themes doom-modeline diminish denote crux corfu consult-notes company auctex all-the-icons)))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
