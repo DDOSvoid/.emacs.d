@@ -39,7 +39,6 @@
 (use-package quelpa
   :ensure t
   :commands quelpa
-  :config
   :custom
   (quelpa-git-clone-depth 1)
   (quelpa-update-melpa-p nil)
@@ -68,32 +67,50 @@
   )
 
 ;; F2 to open init file
-(defun open-init-file()
+(defun ddosvoid/open-init-file()
   (interactive)
   (find-file "~/.emacs.d/emacs-config.org"))
-(global-set-key (kbd "<f2>") 'open-init-file)
+(global-set-key (kbd "<f2>") 'ddosvoid/open-init-file)
 
 ;; sudo find-file
-(defun sudo-edit-current-file ()
+(defun ddosvoid/sudo-edit-current-file ()
   (interactive)
   (when (buffer-file-name)
     (let ((old-point (point)))
       (find-file (concat "/sudo:root@localhost:" (buffer-file-name)))
       (goto-char old-point))))
 
+;; set proxy in wsl2
+(defvar default-proxy "172.26.0.1:7890")
+(defun ddosvoid/proxy-http-show ()
+  "Show HTTP/HTTPS proxy."
+  (interactive)
+  (if url-proxy-services
+      (message "Current HTTP proxy is `%s'" default-proxy)
+    (message "No HTTP proxy")))
+
+(defun ddosvoid/proxy-http-enable ()
+  "Enable HTTP/HTTPS proxy."
+  (interactive)
+  (setq url-proxy-services
+        `(("http" . ,default-proxy)
+          ("https" . ,default-proxy)
+          ("no_proxy" . "^\\(localhost\\|192.168.*\\|10.*\\)")))
+  (ddosvoid/proxy-http-show))
+
+(defun ddosvoid/proxy-http-disable ()
+  "Disable HTTP/HTTPS proxy."
+  (interactive)
+  (setq url-proxy-services nil)
+  (ddosvoid/proxy-http-show))
+
+(defun ddosovid/proxy-http-toggle ()
+  "Toggle HTTP/HTTPS proxy."
+  (interactive)
+  (if (bound-and-true-p url-proxy-services)
+      (ddosvoid/proxy-http-disable)
+    (ddosvoid/proxy-http-enable)))
+
 (provide 'init)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; init.el ends here
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(avy yasnippet vertico use-package-ensure-system-package undo-tree rime racket-mode quelpa-use-package projectile pinyinlib org-modern org-appear orderless no-littering minions marginalia magit lsp-mode keycast json-navigator json-mode fontaine eshell-git-prompt ef-themes doom-themes doom-modeline diminish denote crux corfu consult-notes company auctex all-the-icons)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )

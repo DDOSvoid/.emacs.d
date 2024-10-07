@@ -107,14 +107,14 @@
 #+END_SRC
 
 ** quelpa
-
-[[https://github.com/quelpa/quelpa][quelpa]]
+Reference:
++ [[https://github.com/quelpa/quelpa][quelpa/quelpa: Build and install your Emacs Lisp packages on-the-fly directly from source]]
++ [[https://github.com/quelpa/quelpa-use-package][quelpa/quelpa-use-package: Emacs quelpa handler for use-package]]
 
 #+BEGIN_SRC emacs-lisp
 (use-package quelpa
   :ensure t
   :commands quelpa
-  :config
   :custom
   (quelpa-git-clone-depth 1)
   (quelpa-update-melpa-p nil)
@@ -126,7 +126,6 @@
   :ensure t)
 (use-package quelpa
   :ensure t)
-
 #+END_SRC 
 
 ** loading config
@@ -155,18 +154,49 @@ Reference:
 
 #+BEGIN_SRC emacs-lisp
   ;; F2 to open init file
-  (defun open-init-file()
+  (defun ddosvoid/open-init-file()
     (interactive)
     (find-file "~/.emacs.d/emacs-config.org"))
-  (global-set-key (kbd "<f2>") 'open-init-file)
+  (global-set-key (kbd "<f2>") 'ddosvoid/open-init-file)
 
   ;; sudo find-file
-  (defun sudo-edit-current-file ()
+  (defun ddosvoid/sudo-edit-current-file ()
     (interactive)
     (when (buffer-file-name)
       (let ((old-point (point)))
         (find-file (concat "/sudo:root@localhost:" (buffer-file-name)))
         (goto-char old-point))))
+
+  ;; set proxy in wsl2
+  (defvar default-proxy "172.26.0.1:7890")
+  (defun ddosvoid/proxy-http-show ()
+    "Show HTTP/HTTPS proxy."
+    (interactive)
+    (if url-proxy-services
+        (message "Current HTTP proxy is `%s'" default-proxy)
+      (message "No HTTP proxy")))
+
+  (defun ddosvoid/proxy-http-enable ()
+    "Enable HTTP/HTTPS proxy."
+    (interactive)
+    (setq url-proxy-services
+          `(("http" . ,default-proxy)
+            ("https" . ,default-proxy)
+            ("no_proxy" . "^\\(localhost\\|192.168.*\\|10.*\\)")))
+    (ddosvoid/proxy-http-show))
+
+  (defun ddosvoid/proxy-http-disable ()
+    "Disable HTTP/HTTPS proxy."
+    (interactive)
+    (setq url-proxy-services nil)
+    (ddosvoid/proxy-http-show))
+
+  (defun ddosovid/proxy-http-toggle ()
+    "Toggle HTTP/HTTPS proxy."
+    (interactive)
+    (if (bound-and-true-p url-proxy-services)
+        (ddosvoid/proxy-http-disable)
+      (ddosvoid/proxy-http-enable)))
 
 #+END_SRC
 
@@ -248,7 +278,7 @@ Reference:
     )
 #+END_SRC
 
-** doom-themes
+** doom-themes [deprecated]
 
 [[https://github.com/doomemacs/themes][doom-themes]]
 
@@ -301,13 +331,14 @@ Use M-x all-the-icons-install-fonts to install the Resource Fonts.
 Use M-x nerd-icons-install-fonts to install Symbols Nerd Fonts Mono.
 
 #+BEGIN_SRC emacs-lisp
-(use-package nerd-icons
-  ;; :custom
-  ;; The Nerd Font you want to use in GUI
-  ;; "Symbols Nerd Font Mono" is the default and is recommended
-  ;; but you can use any other Nerd Font if you want
-  ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
-  )
+  (use-package nerd-icons
+    :ensure t
+    ;; :custom
+    ;; The Nerd Font you want to use in GUI
+    ;; "Symbols Nerd Font Mono" is the default and is recommended
+    ;; but you can use any other Nerd Font if you want
+    ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
+    )
 #+END_SRC
 
 ** fontaine
@@ -943,6 +974,37 @@ Reference:
     )
 #+end_src
 
+** symbol-overlay
+Reference:
++ [[https://github.com/wolray/symbol-overlay][wolray/symbol-overlay: Highlight symbols with keymap-enabled overlays]]
+
+| Key | Command                      |
+| i   | symbol-overlay-put           |
+| n   | symbol-overlay-jump-next     |
+| p   | symbol-overlay-jump-prev     |
+| q   | symbol-overlay-query-replace |
+| r   | symbol-overlay-rename        |
+
+#+begin_src emacs-lisp
+  (use-package symbol-overlay
+    :ensure t
+    :init
+    (global-set-key (kbd "M-i") 'symbol-overlay-put)
+    (global-set-key (kbd "M-n") 'symbol-overlay-switch-forward)
+    (global-set-key (kbd "M-p") 'symbol-overlay-switch-backward)
+    (global-set-key (kbd "<f7>") 'symbol-overlay-mode)
+    (global-set-key (kbd "<f8>") 'symbol-overlay-remove-all))
+#+end_src
+
+** thing-edit
+Reference: [[https://github.com/manateelazycat/thing-edit][GitHub - manateelazycat/thing-edit: Copy and paste anything under cursor.]]
+
+#+begin_src emacs-lisp
+  (use-package thing-edit
+    :ensure t
+    :quelpa (thing-edit :fetcher github :repo "manateelazycat/thing-edit"))
+#+end_src
+
 ** init-edit.el footer
 
 #+BEGIN_SRC emacs-lisp
@@ -1306,7 +1368,7 @@ See this blog for more information about org-capture. [[https://www.zmonster.me/
                      :jump-to-captured t)))
     :config
     (setq denote-directory (expand-file-name "~/org/"))
-    (setq denote-known-keywords '("emacs" "cpp" "linux" "commom" "cheatsheet"))
+    (setq denote-known-keywords '("emacs" "cpp" "linux" "commom" "cheatsheet" "finance"))
     (setq denote-infer-keywords t)
     (setq denote-sort-keywords t)
     ;; org is default, set others such as text, markdown-yaml, markdown-toml
@@ -1318,13 +1380,13 @@ See this blog for more information about org-capture. [[https://www.zmonster.me/
     (setq denote-allow-multi-word-keywords t)
     (setq denote-date-format nil)
 
+    ;; DEPRECATED
     ;; If you use Markdown or plain text files (Org renders links as buttons
     ;; right away)
-    (add-hook 'find-file-hook #'denote-link-buttonize-buffer)
-    (setq denote-dired-rename-expert nil)
-
+    ;; (add-hook 'find-file-hook #'denote-link-buttonize-buffer)
+    ;; (setq denote-dired-rename-expert nil)
     ;; OR if only want it in `denote-dired-directories':
-    (add-hook 'dired-mode-hook #'denote-dired-mode-in-directories)
+    ;; (add-hook 'dired-mode-hook #'denote-dired-mode-in-directories)
     )
 #+END_SRC
 
@@ -1408,6 +1470,37 @@ See this blog for more information about org-capture. [[https://www.zmonster.me/
 
   ;;; Code:
 #+end_src
+
+** eshell
+
+#+begin_src emacs-lisp :tangle no
+  (use-package eshell
+    :ensure nil
+    :config
+    (setenv "http_proxy" "http://172.26.0.1:7890")
+    (setenv "https_proxy" "https://172.26.0.1:7890"))
+#+end_src
+
+** with-proxy
+Reference:
++ [[https://github.com/twlz0ne/with-proxy.el][twlz0ne/with-proxy.el: Evaluate expressions with proxy]]
+
+#+begin_src emacs-lisp
+  (use-package with-proxy
+    :ensure t)
+
+  (defun ddosvoid/proxy-around (&rest args)
+    "Wrap a function with proxy configuration"
+    (with-proxy
+     :http-server "172.26.0.1:7890"
+     (apply args)))
+
+  (defun ddosvoid/run-eshell-with-proxy ()
+      "Run eshell with proxy"
+    (interactive)
+    (ddosvoid/proxy-around (eshell)))
+#+end_src
+
 ** magit
 
 #+begin_src emacs-lisp
@@ -1460,7 +1553,34 @@ See this blog for more information about org-capture. [[https://www.zmonster.me/
   (use-package eglot
     :ensure nil
     :hook (c++-mode . eglot-ensure))
-  
+#+end_src
+
+** eglot-booster [disabled for now]
+Reference:
++ [[https://github.com/jdtsmith/eglot-booster][jdtsmith/eglot-booster: Boost eglot using lsp-booster]]
+
+#+begin_src emacs-lisp :tangle no
+  (use-package eglot-booster
+    :ensure t
+    :after eglot
+    :quelpa (eglot-booster :fetcher github :repo "jdtsmith/eglot-booster")
+    :config (eglot-booster-mode))
+#+end_src
+
+** lsp-bridge [disabled for now]
+Reference:
++ [[https://github.com/manateelazycat/lsp-bridge][manateelazycat/lsp-bridge: A blazingly fast LSP client for Emacs]]
+
+#+begin_src emacs-lisp :tangle no
+  (use-package lsp-bridge
+    :ensure t
+    :after ('yasnippet 'markdown-mode)
+    :quelpa
+    (lsp-bridge
+     :fetcher github
+     :repo "manateelazycat/lsp-bridge"
+     :files (:defaults "*.el" "*.py" "acm" "core" "langserver" "multiserver" "resources"))
+    :init (global-lsp-bridge-mode))
 #+end_src
 
 ** company-mode
@@ -1475,9 +1595,10 @@ See this blog for more information about org-capture. [[https://www.zmonster.me/
     (setq company-show-numbers t) ; 给选项编号 (按快捷键 M-1、M-2 等等来进行选择).
     (setq company-minimum-prefix-length 1)) ; 只需敲 1 个字母就开始进行自动补全
 #+end_src
-** racket-mode
 
-#+begin_src emacs-lisp
+** racket-mode [deprecated]
+
+#+begin_src emacs-lisp :tangle no
   (use-package racket-mode
     :ensure t)
 #+end_src
@@ -1696,22 +1817,77 @@ See this blog for more information about org-capture. [[https://www.zmonster.me/
                        (template-args-cont    . (c-lineup-template-args +)))))
 #+end_src
 
-** json-mode
+** json-mode [deprecated]
 
 [[https://github.com/json-emacs/json-mode][json-mode]]
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package json-mode
     :ensure t)
 #+end_src
 
-** json-navigator
+** json-navigator [deprecated]
 
 [[https://github.com/DamienCassou/json-navigator][json-navigator]]
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package json-navigator
     :ensure t)
+#+end_src
+
+** markdown-mode
+Reference:
++ [[https://github.com/jrblevin/markdown-mode][jrblevin/markdown-mode: Emacs Markdown Mode]]
+
+#+begin_src emacs-lisp
+  (use-package markdown-mode
+    :ensure t
+    :mode ("README\\.md\\'" . gfm-mode)
+    :init (setq markdown-command "multimarkdown")
+    ;; :bind (:map markdown-mode-map
+    ;;       ("C-c C-e" . markdown-do))
+    )
+#+end_src
+
+** treesit-auto
+Reference:
++ [[https://github.com/renzmann/treesit-auto][renzmann/treesit-auto: Automatic installation, usage, and fallback for tree-sitter major modes in Emacs 29]]
+
+#+begin_src emacs-lisp
+    (use-package treesit-auto
+      :ensure t
+      :custom
+      (treesit-auto-install 'prompt)
+      :config
+      (setq treesit-auto-langs '(c cpp))
+      (treesit-auto-add-to-auto-mode-alist '(c cpp))
+      (setq ddosvoid-cpp-tsauto-config
+            (make-treesit-auto-recipe
+             :lang 'cpp
+             :ts-mode 'c++-ts-mode
+             :remap 'c++-mode
+             :url "https://github.com/tree-sitter/tree-sitter-cpp"
+             :revision "v0.22.0"
+             :ext "\\.cpp\\'"))
+      (add-to-list 'treesit-auto-recipe-list ddosvoid-cpp-tsauto-config)
+      (setq treesit-font-lock-level 4)
+      (global-treesit-auto-mode))
+#+end_src
+
+** treesit [deprecated, see treesit-auto]
+Reference:
++ [[https://github.com/tree-sitter/tree-sitter-cpp/][tree-sitter/tree-sitter-cpp: C++ grammar for tree-sitter]]
++ [[https://github.com/tree-sitter/tree-sitter-cpp/issues/271][bug: Emacs c++-ts-mode failing with "Node type error at" 575 · Issue #271 · tree-sitter/tree-sitter-cpp]]
++ [[https://elliot00.com/posts/emacs-tree-sitter][Emacs配置tree-sitter - Elliot]]
+
+#+begin_src emacs-lisp :tangle no
+  (use-package treesit
+    :ensure nil
+    :config (setq treesit-font-lock-level 4)
+    :init
+    (setq treesit-language-source-alist
+      '((cpp     . ("https://github.com/tree-sitter/tree-sitter-cpp" "v0.22.0"))))
+    (add-to-list 'major-mode-remap-alist '(c++-mode . c++-ts-mode)))
 #+end_src
 
 ** other config
@@ -1955,32 +2131,16 @@ See this blog for more information about org-capture. [[https://www.zmonster.me/
   )
 #+end_src
 
-** yasnippet [deprecated]
+** yasnippet
 
-[[https://github.com/joaotavora/yasnippet][yasnippet]] 
+Reference:
++ [[https://github.com/joaotavora/yasnippet][joaotavora/yasnippet: A template system for Emacs]] 
 
-#+begin_src emacs-lisp :tangle no
-;; yasnippet settings
-(use-package yasnippet
-  :ensure t
-  :diminish yas-minor-mode
-  :hook ((after-init . yas-reload-all)
-         ((prog-mode LaTeX-mode org-mode) . yas-minor-mode))
-  :config
-  ;; Suppress warning for yasnippet code.
-  (require 'warnings)
-  (add-to-list 'warning-suppress-types '(yasnippet backquote-change))
-
-  (setq yas-prompt-functions '(yas-x-prompt yas-dropdown-prompt))
-  (defun smarter-yas-expand-next-field ()
-    "Try to `yas-expand' then `yas-next-field' at current cursor position."
-    (interactive)
-    (let ((old-point (point))
-          (old-tick (buffer-chars-modified-tick)))
-      (yas-expand)
-      (when (and (eq old-point (point))
-                 (eq old-tick (buffer-chars-modified-tick)))
-        (ignore-errors (yas-next-field))))))
+#+begin_src emacs-lisp
+  (use-package yasnippet
+    :ensure t
+    :config
+    (yas-global-mode 1))
 #+end_src
 
 ** init-completion.el footer

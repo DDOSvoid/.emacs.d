@@ -137,11 +137,24 @@
         )
 
   :custom
-  (avy-timeout-seconds 1.0)
+  (avy-timeout-seconds 0.5)
   (avy-all-windows t)
   (avy-background t)
   (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?l ?q ?e ?r ?u ?i ?p ?n))
   )
+
+(use-package symbol-overlay
+  :ensure t
+  :init
+  (global-set-key (kbd "M-i") 'symbol-overlay-put)
+  (global-set-key (kbd "M-n") 'symbol-overlay-switch-forward)
+  (global-set-key (kbd "M-p") 'symbol-overlay-switch-backward)
+  (global-set-key (kbd "<f7>") 'symbol-overlay-mode)
+  (global-set-key (kbd "<f8>") 'symbol-overlay-remove-all))
+
+(use-package thing-edit
+  :ensure t
+  :quelpa (thing-edit :fetcher github :repo "manateelazycat/thing-edit"))
 
 (provide 'init-edit)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

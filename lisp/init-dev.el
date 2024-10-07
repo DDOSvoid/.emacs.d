@@ -3,6 +3,20 @@
 
 ;;; Code:
 
+(use-package with-proxy
+  :ensure t)
+
+(defun ddosvoid/proxy-around (&rest args)
+  "Wrap a function with proxy configuration"
+  (with-proxy
+   :http-server "172.26.0.1:7890"
+   (apply args)))
+
+(defun ddosvoid/run-eshell-with-proxy ()
+    "Run eshell with proxy"
+  (interactive)
+  (ddosvoid/proxy-around (eshell)))
+
 (use-package magit
   :ensure t
   :hook (git-commit-mode . flyspell-mode)
@@ -34,9 +48,6 @@
   (setq company-idle-delay 0.0)
   (setq company-show-numbers t) ; 给选项编号 (按快捷键 M-1、M-2 等等来进行选择).
   (setq company-minimum-prefix-length 1)) ; 只需敲 1 个字母就开始进行自动补全
-
-(use-package racket-mode
-  :ensure t)
 
 (use-package cc-mode
   :ensure nil
@@ -248,11 +259,32 @@
                      ;;       double>(0, 0, 0);
                      (template-args-cont    . (c-lineup-template-args +)))))
 
-(use-package json-mode
-  :ensure t)
+(use-package markdown-mode
+  :ensure t
+  :mode ("README\\.md\\'" . gfm-mode)
+  :init (setq markdown-command "multimarkdown")
+  ;; :bind (:map markdown-mode-map
+  ;;       ("C-c C-e" . markdown-do))
+  )
 
-(use-package json-navigator
-  :ensure t)
+(use-package treesit-auto
+  :ensure t
+  :custom
+  (treesit-auto-install 'prompt)
+  :config
+  (setq treesit-auto-langs '(c cpp))
+  (treesit-auto-add-to-auto-mode-alist '(c cpp))
+  (setq ddosvoid-cpp-tsauto-config
+        (make-treesit-auto-recipe
+         :lang 'cpp
+         :ts-mode 'c++-ts-mode
+         :remap 'c++-mode
+         :url "https://github.com/tree-sitter/tree-sitter-cpp"
+         :revision "v0.22.0"
+         :ext "\\.cpp\\'"))
+  (add-to-list 'treesit-auto-recipe-list ddosvoid-cpp-tsauto-config)
+  (setq treesit-font-lock-level 4)
+  (global-treesit-auto-mode))
 
 (add-hook 'prog-mode-hook 'display-line-numbers-mode)
 

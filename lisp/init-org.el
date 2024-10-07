@@ -317,7 +317,7 @@ Optional for Org-mode file: `LINK'."
                    :jump-to-captured t)))
   :config
   (setq denote-directory (expand-file-name "~/org/"))
-  (setq denote-known-keywords '("emacs" "cpp" "linux" "commom" "cheatsheet"))
+  (setq denote-known-keywords '("emacs" "cpp" "linux" "commom" "cheatsheet" "finance"))
   (setq denote-infer-keywords t)
   (setq denote-sort-keywords t)
   ;; org is default, set others such as text, markdown-yaml, markdown-toml
@@ -329,13 +329,13 @@ Optional for Org-mode file: `LINK'."
   (setq denote-allow-multi-word-keywords t)
   (setq denote-date-format nil)
 
+  ;; DEPRECATED
   ;; If you use Markdown or plain text files (Org renders links as buttons
   ;; right away)
-  (add-hook 'find-file-hook #'denote-link-buttonize-buffer)
-  (setq denote-dired-rename-expert nil)
-
+  ;; (add-hook 'find-file-hook #'denote-link-buttonize-buffer)
+  ;; (setq denote-dired-rename-expert nil)
   ;; OR if only want it in `denote-dired-directories':
-  (add-hook 'dired-mode-hook #'denote-dired-mode-in-directories)
+  ;; (add-hook 'dired-mode-hook #'denote-dired-mode-in-directories)
   )
 
 (use-package consult-notes
